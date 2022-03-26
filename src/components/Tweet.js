@@ -1,18 +1,40 @@
-import React, { Component } from 'react'
-import { connect } from 'react-redux'
-import { formatTweet, formatDate } from '../utils/helpers'
-//import some cool icons
-import { TiArrowBackOutline, TiHeartOutline, TiHeartFullOutline} from 'react-icons/ti/index'
-import { handleToggleTweet } from '../actions/tweets'
-import { Link, withRouter } from 'react-router-dom'
+import React from 'react'
+import { useSelector, useDispatch } from 'react-redux'
+import { formatDate, formatTweet} from '../utils/helpers'
+import {TiArrowBackOutline, TiHeartOutline, TiHeartFullOutline} from 'react-icons/ti/index'
+import { handleToggleTweet} from '../actions/tweets'
+import { Link, useNavigate } from 'react-router-dom'
 
-class Tweet extends Component {
-    
-    handleLike = (e) => {
+function createTweetInfoById(id) {
+    const tweetInfo = useSelector(({tweets, users, authedUser}) => {
+        const tweet = tweets[id]
+        const parentTweet = tweet ? tweets[tweet.replyingTo] : null
+
+        return {
+            authedUser,
+            tweet: tweet 
+                ? formatTweet(tweet, users[tweet.author], authedUser, parentTweet)
+                : null
+        }
+    })
+    return tweetInfo
+}
+
+export default function Tweet(props) {
+
+    const navigate = useNavigate();
+    const dispatch = useDispatch()
+
+    const toParent = (e, id) => {
         e.preventDefault()
-        // handle Like event
-        const { dispatch, tweet, authedUser } = this.props
-        
+        //we get access to this because we used withRouter
+        navigate(`/tweet/${id}`)
+    }
+
+    const handleLike = (e, tweetInfo) => {
+        e.preventDefault()
+        //todo: handle click on like icon
+        const { tweet, authedUser} = tweetInfo
         dispatch(handleToggleTweet({
             id: tweet.id,
             hasLiked: tweet.hasLiked,
@@ -20,67 +42,39 @@ class Tweet extends Component {
         }))
     }
     
-    toParent = (e, id) => {
-        e.preventDefault()
-        this.props.history.push(`/tweet/${id}`)
-    }
+    const tweetInfo = createTweetInfoById(props.id)
 
-    render() {
-        const { tweet } = this.props
-        
-        if (tweet === null) {
-            return <p> This Tweet does not exist </p>
-        }
-        
-        console.log(this.props)
-        // deconstruct a tweet to extract its data
-        const { name, avatar, timestamp, text, hasLiked, likes, replies, id, parent } = tweet
-        
-        return (
-            <Link to={`/tweet/${id}`} className='tweet'>
-                <img
-                    src={avatar}
-                    alt={`Avatar of ${name}`}
-                    className='avatar'
-                />
-                <div className='tweet-info'>
-                    <div>
-                        <span>{name}</span>
-                        <div>{formatDate(timestamp)}</div>
-                        {parent && (
-                            <button className='replying-to' onclick={(e) => this.toParent (e, parent.id)}>
-                                Replying to  @{parent.author}
-                            </button>
-                        )}
-                        <p>{text}</p>
-                    </div>
-                    <div className='tweets-icons'>
-                        <TiArrowBackOutline className='tweet-icon'/>
-                        <span>{replies !==0  && replies}</span>
-                        <button className='heart-button' onClick={this.handleLike}>
-                            {hasLiked === true
-                                ? <TiHeartFullOutline color='#e0245e' className='tweet-icon'/>
-                                : <TiHeartOutline className='tweet-icon'/>
-                            }
-                        </button>
-                        <span>{likes !== 0 && likes}</span>
-                    </div>
-               </div>
-          </Link>
-        )
+    if (tweetInfo === null) {
+        return (<p>This Tweet doesn't exist!</p>)
     }
-}
-
-function mapStateToProps({authedUser, users, tweets}, {id}) {
-    const tweet = tweets[id]
-    const parentTweet = tweet ? tweets[tweet.replyingTo] : null
     
-    return {
-        authedUser,
-        tweet: tweet 
-            ? formatTweet(tweet, users[tweet.author], authedUser, parentTweet)
-            : null
-    }
-}
+    const {name, avatar, timestamp, text, hasLiked, likes, replies, parent, id} = tweetInfo.tweet
 
-export default withRouter(connect(mapStateToProps)(Tweet))
+    return (
+        <Link to={`/tweet/${id}`} className='tweet'>
+            <img src={avatar} alt={`Avatar of ${name}`} className='avatar'/>
+            <div className='tweet-info'>
+                <div>
+                    <span>{name}</span>
+                    <div>{formatDate(timestamp)}</div>
+                    {parent && (
+                        <button className='replying-to' onClick={(e) => toParent(e,parent.id)}>
+                            Replying to @{parent.author}
+                        </button>
+                    )}
+                    <p>{text}</p>
+                </div>
+                <div className='tweet-icons'>
+                    <TiArrowBackOutline className='tweet-icon' />
+                    <span>{replies !==0 && replies}</span>
+                    <button className='heart-button' onClick={(e) => handleLike(e, tweetInfo)}>
+                    {hasLiked === true
+                    ? <TiHeartFullOutline color="#e0245e" className='tweet-icon' />
+                    : <TiHeartOutline className='tweet-icon' />}
+                    </button>
+                    <span>{likes !==0 && likes}</span>
+                </div>
+            </div>
+        </Link>    
+    )
+}

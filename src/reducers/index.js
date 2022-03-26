@@ -1,21 +1,11 @@
-import { combineReducers } from 'redux'
-import authedUser from '../reducers/authedUser'
-import users from '../reducers/users'
-import tweets from '../reducers/tweets'
-import { loadingBarReducer } from 'react-redux-loading'
+import { combineReducers} from 'redux'
+import authedUser from "./authedUser";
+import users from "./users";
+import tweets from './tweets';
+import { loadingBarReducer } from 'react-redux-loading';
 
-export default combineReducers ({
-    authedUser,
+export default combineReducers({
     users,
     tweets,
-    loadingBar: loadingBarReducer,
-})
-
-/* Note that the combineReducers syntax above is a ES6 shorthand.
-It's equivalent to the following.
-combineReducers({
-  authedUser: authedUser,
-  tweets: tweets,
-  users: users
-});
-*/
+    authedUser,
+    loadingBar: loadingBarReducer,})
